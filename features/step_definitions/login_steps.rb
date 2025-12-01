@@ -1,48 +1,70 @@
 require 'capybara/cucumber'
 require 'selenium-webdriver'
 
-Capybara.default_driver = :selenium
-Capybara.app_host = 'https://www.saucedemo.com'
-Capybara.default_max_wait_time = 10
-
-# Steps del Background
-Given('I am on the login page') do
+Given('I am on the login page with all required elements') do
   visit('/')
-  expect(page).to have_current_path('https://www.saucedemo.com/')
+  
+  expect(page).to have_xpath('//*[@id="user-name"]')
+  
+  expect(page).to have_xpath('//*[@id="password"]')
+  
+  expect(page).to have_xpath('//*[@id="login-button"]')
+  
+  expect(page).to have_content('Accepted usernames are:')
+  expect(page).to have_content('Password for all users:')
 end
 
-# Steps de entrada de datos
-When('I enter username {string} and password {string}') do |username, password|
-  fill_in 'user-name', with: username
-  fill_in 'password', with: password
+When('I enter username {string} in the username field') do |username|
+  find(:xpath, '//*[@id="user-name"]').set(username)
 end
 
-When('I click the login button') do
-  click_button 'Login'
+When('I enter password {string} in the password field') do |password|
+  find(:xpath, '//*[@id="password"]').set(password)
 end
 
-# Steps de verificación - Login exitoso
-Then('I should be redirected to the products page') do
-  expect(page).to have_current_path('https://www.saucedemo.com/inventory.html')
+When('I click the login button with id {string}') do |button_id|
+  find(:xpath, "//*[@id='#{button_id}']").click
 end
 
-Then('I should see the products inventory') do
-  expect(page).to have_css('.inventory_list')
+When('I visit the inventory page directly at {string}') do |path|
+  visit(path)
+end
+
+When('I wait {int} seconds for the page to load') do |seconds|
+  sleep seconds
+end
+
+Then('I should be redirected to the inventory page at {string}') do |expected_path|
+  expect(page.current_url).to eq("https://www.saucedemo.com#{expected_path}")
+  
+  expect(page).to have_xpath('//*[@id="inventory_container"]')
+  expect(page).to have_xpath('//*[@class="inventory_list"]')
+  
   expect(page).to have_content('Products')
 end
 
-Then('I should see the products page') do
-  expect(page).to have_current_path('https://www.saucedemo.com/inventory.html')
-  expect(page).to have_css('.inventory_list')
+Then('I should see the specific product {string}') do |product_name|
+  product_element = find(:xpath, '//*[@id="item_4_title_link"]/div')
+  expect(product_element.text).to eq(product_name)
+  
+  expect(page).to have_xpath('//*[@class="inventory_item"]', minimum: 1)
 end
 
-# Steps de verificación - Errores de login
-Then('I should see error message {string}') do |expected_message|
-  error_container = find('.error-message-container')
-  expect(error_container).to have_content(expected_message)
+Then('I should see exact error message {string} in the error container') do |expected_message|
+  sleep 1
+  error_container = find(:xpath, '//*[@id="login_button_container"]/div/form/div[3]')
+  error_message = find(:xpath, '//*[@id="login_button_container"]/div/form/div[3]/h3')
+  expect(error_message.text).to eq(expected_message)
+  expect(error_container).to be_visible
 end
 
-Then('I should remain on the login page') do
-  expect(page).to have_current_path('https://www.saucedemo.com/')
-  expect(page).to have_css('.login_wrapper')
+Given('I am logged in as {string}') do |username|
+  visit('/')
+  find(:xpath, '//*[@id="user-name"]').set(username)
+  find(:xpath, '//*[@id="password"]').set('secret_sauce')
+  find(:xpath, '//*[@id="login-button"]').click
+  
+  sleep 6 if username == 'performance_glitch_user'
+  
+  expect(page.current_url).to eq('https://www.saucedemo.com/inventory.html')
 end

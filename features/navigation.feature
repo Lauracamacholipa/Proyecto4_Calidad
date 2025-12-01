@@ -1,36 +1,40 @@
-Feature: Navegación en Saucedemo
+Feature: Navigation in Saucedemo
   As a logged in user
   I want to navigate through the application
   So that I can access all functionalities
 
-  Background:
+  @smoke @navigation
+  Scenario: Open and close hamburger menu
     Given I am logged in as "standard_user"
+    When I click the hamburger menu button
+    Then I should see the side menu with all options
+    When I click the close menu button
+    Then the side menu should not be visible
 
   @smoke @navigation
-  Scenario: Abrir y cerrar menú hamburguesa
-    When I click the menu button
-    Then I should see menu options "All Items, About, Logout, Reset App State"
-    When I click the menu button again
-    Then the menu should close
+  Scenario: Logout from menu
+    Given I am logged in as "standard_user"
+    When I click the hamburger menu button
+    And I click the logout option
+    Then I should be redirected to the login page at "/"
+    And I should see the login form elements
 
   @smoke @navigation
-  Scenario: Logout desde el menú
-    When I click the menu button
-    And I click the logout link
-    Then I should be redirected to the login page
-    And the session should be cleared
+  Scenario: Reset app state from menu
+    Given I am logged in as "standard_user"
+    And I have added "Sauce Labs Backpack" to the cart
+    And the cart shows "1" item
+    When I click the hamburger menu button
+    And I click the reset app state option
+    And I click the close menu button
+    And I reload the current page
+    Then the "Sauce Labs Backpack" product should show "Add to cart" button
+    And the cart should show "0" items
 
   @smoke @navigation
-  Scenario: Reset app state desde el menú
-    Given I have added products to the cart
-    When I click the menu button
-    And I click the reset app state link
-    Then the cart should be empty
-    And all products should show "Add to cart" button
-
-  @smoke @navigation
-  Scenario: Navegar a About page
-    When I click the menu button
-    And I click the about link
+  Scenario: Navigate to About page
+    Given I am logged in as "standard_user"
+    When I click the hamburger menu button
+    And I click the about option
     Then I should be redirected to the Sauce Labs website
-    And I should see information about Sauce Labs
+    And I should see the text "Introducing Sauce AI: Intelligent Agents for Next-Gen Software Quality"
