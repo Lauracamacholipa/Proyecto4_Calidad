@@ -35,7 +35,7 @@ Feature: Productos y filtros
 
     Examples:
       | sort_criteria        | expected_order       | first_product               | last_product              |
-      | Name (A to Z)        | alphabetical ascending | Sauce Labs Backpack        | Test.allTheThings() T-Shirt |
-      | Name (Z to A)        | alphabetical descending| Test.allTheThings() T-Shirt | Sauce Labs Backpack       |
+      | Name (A to Z)        | alphabetical ascending | Sauce Labs Backpack        | Test.allTheThings() T-Shirt (Red) |
+      | Name (Z to A)        | alphabetical descending| Test.allTheThings() T-Shirt (Red) | Sauce Labs Backpack       |
       | Price (low to high)  | price ascending     | Sauce Labs Onesie          | Sauce Labs Fleece Jacket  |
       | Price (high to low)  | price descending    | Sauce Labs Fleece Jacket   | Sauce Labs Onesie         |
