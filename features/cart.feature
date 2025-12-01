@@ -8,9 +8,9 @@ Feature: Carrito de compras
 
   @smoke @cart
   Scenario Outline: Add and remove products from cart
-    Given I have "<product_count>" products in the cart
-    When I remove "<products_to_remove>" products from the cart
-    Then the cart should show "<remaining_count>" items
+    Given I have "<product_count>" products in the cart on cart page
+    When I remove "<products_to_remove>" products from the cart on cart page
+    Then the cart should show "<remaining_count>" items on cart page
 
     Examples:
       | product_count | products_to_remove | remaining_count |
@@ -20,6 +20,6 @@ Feature: Carrito de compras
 
   @smoke @cart
   Scenario: Continue shopping from cart
-    Given I have products in the cart
-    When I click "Continue Shopping"
-    Then I should be redirected to the products page
+    Given I have products in the cart on cart page
+    When I click "Continue Shopping" on cart page
+    Then I should be redirected to the products page from cart
