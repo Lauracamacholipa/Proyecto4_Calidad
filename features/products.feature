@@ -11,7 +11,12 @@ Feature: Productos y filtros
   Scenario Outline: View products with different users
     Given I am logged in as "<username>"
     Then I should see the products page
-    And I should see at least 1 product
+    And I should see exactly 6 products displayed
+    And I should see the "Products" header
+    And I should see the shopping cart icon
+    And I should see the sort dropdown with "Name (A to Z)" selected
+    And each product should have a name, description, price and "Add to cart" button
+    And I should see products including "Sauce Labs Backpack", "Sauce Labs Bike Light", "Sauce Labs Bolt T-Shirt"
 
     Examples:
       | username             |
@@ -22,12 +27,15 @@ Feature: Productos y filtros
   @smoke @sorting
   Scenario Outline: Sort products by different criteria
     Given I am on the products page
-    When I sort products by "<sort_criteria>"
-    Then I should see products sorted by "<sort_criteria>"
+    When I select "<sort_criteria>" from the sort dropdown
+    Then the dropdown should display "<sort_criteria>" as selected
+    And I should see products sorted by "<expected_order>"
+    And the first product should be "<first_product>"
+    And the last product should be "<last_product>"
 
     Examples:
-      | sort_criteria        |
-      | Name (A to Z)        |
-      | Name (Z to A)        |
-      | Price (low to high)  |
-      | Price (high to low)  |
+      | sort_criteria        | expected_order       | first_product               | last_product              |
+      | Name (A to Z)        | alphabetical ascending | Sauce Labs Backpack        | Test.allTheThings() T-Shirt |
+      | Name (Z to A)        | alphabetical descending| Test.allTheThings() T-Shirt | Sauce Labs Backpack       |
+      | Price (low to high)  | price ascending     | Sauce Labs Onesie          | Sauce Labs Fleece Jacket  |
+      | Price (high to low)  | price descending    | Sauce Labs Fleece Jacket   | Sauce Labs Onesie         |
