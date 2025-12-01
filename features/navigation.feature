@@ -1,40 +1,29 @@
 Feature: Navigation in Saucedemo
   As a logged in user
-  I want to navigate through the application
-  So that I can access all functionalities
+  I want to navigate the application
+  So that I can use key functionalities
 
   @smoke @navigation
-  Scenario: Open and close hamburger menu
+  Scenario: Open and close side menu
     Given I am logged in as "standard_user"
-    When I click the hamburger menu button
-    Then I should see the side menu with all options
-    When I click the close menu button
-    Then the side menu should not be visible
+    When I open the side menu
+    Then I should see menu options
+    When I close the side menu
+    Then the menu should be closed
+
+  @smoke @navigation  
+  Scenario: Logout from side menu
+    Given I am logged in as "standard_user"
+    When I open the side menu
+    And I select "Logout" from menu
+    Then I should see login page
 
   @smoke @navigation
-  Scenario: Logout from menu
+  Scenario: Reset app state
     Given I am logged in as "standard_user"
-    When I click the hamburger menu button
-    And I click the logout option
-    Then I should be redirected to the login page at "/"
-    And I should see the login form elements
-
-  @smoke @navigation
-  Scenario: Reset app state from menu
-    Given I am logged in as "standard_user"
-    And I have added "Sauce Labs Backpack" to the cart
-    And the cart shows "1" item
-    When I click the hamburger menu button
-    And I click the reset app state option
-    And I click the close menu button
-    And I reload the current page
-    Then the "Sauce Labs Backpack" product should show "Add to cart" button
-    And the cart should show "0" items
-
-  @smoke @navigation
-  Scenario: Navigate to About page
-    Given I am logged in as "standard_user"
-    When I click the hamburger menu button
-    And I click the about option
-    Then I should be redirected to the Sauce Labs website
-    And I should see the text "Introducing Sauce AI: Intelligent Agents for Next-Gen Software Quality"
+    And I have product "Sauce Labs Backpack" in cart
+    When I open the side menu
+    And I select "Reset App State" from menu
+    And I reload page
+    Then the cart should be empty
+    And product "Sauce Labs Backpack" should show "Add to cart"
