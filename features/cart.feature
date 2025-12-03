@@ -44,3 +44,10 @@ Feature: Cart Management
     Then the cart badge should show 1 item
     When I add "Sauce Labs Bike Light" to the cart
     Then the cart badge should show 2 items
+
+  @cart @limits
+  Scenario: Cannot add more than available products to cart
+    Given I have an empty cart
+    When I try to add more than 6 products to the cart
+    Then I should see only 6 products can be added
+    And the cart badge should show 6 items

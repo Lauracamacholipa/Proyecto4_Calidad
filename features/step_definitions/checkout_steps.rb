@@ -153,3 +153,25 @@ Then('I should see total of ${float}') do |expected_total|
   total = extract_price(find('.summary_total_label').text)
   expect(total).to eq(expected_total)
 end
+
+Then('the tax should be {int}% of item total') do |tax_percentage|
+  item_total = extract_price(find('.summary_subtotal_label').text)
+  tax = extract_price(find('.summary_tax_label').text)
+  expected_tax = (item_total * tax_percentage / 100).round(2)
+  
+  expect(tax).to eq(expected_tax)
+end
+
+Then('the total should be item total plus tax') do
+  item_total = extract_price(find('.summary_subtotal_label').text)
+  tax = extract_price(find('.summary_tax_label').text)
+  total = extract_price(find('.summary_total_label').text)
+  
+  expect(total).to eq((item_total + tax).round(2))
+end
+
+Then('the item total should be ${float}') do |expected_total|
+  ensure_on_checkout_step(:overview)
+  item_total = extract_price(find('.summary_subtotal_label').text)
+  expect(item_total).to eq(expected_total)
+end

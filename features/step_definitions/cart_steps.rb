@@ -126,9 +126,32 @@ Then('I should see the cart page with no items') do
   expect(page).to have_no_css('.cart_item', wait: 10)
 end
 
-# Este step ya no se usa pero lo dejamos por compatibilidad
 Then('the cart should show {string} message') do |message|
   expect(page.current_url).to include('/cart.html')
   expect(page).to have_css('.title', text: 'Your Cart', wait: 10)
   expect(page).to have_no_css('.cart_item', wait: 10)
+end
+
+When('I try to add more than {int} products to the cart') do |max_products|
+  ensure_on_products_page
+  
+  buttons = all('.btn_inventory', wait: 10)
+  
+  buttons.each(&:click)
+  
+  expect(page).to have_css('button[id^="remove-"]', count: max_products, wait: 10)
+end
+
+Then('I should see only {int} products can be added') do |expected_max|
+  expect(get_cart_badge_count).to eq(expected_max)
+  
+  remove_buttons = all('button[id^="remove-"]', text: 'Remove', wait: 10)
+  expect(remove_buttons.count).to eq(expected_max)
+end
+
+When('I click the {string} button {int} times') do |button_text, times|
+  times.times do
+    find('button', text: button_text, wait: 10).click
+    sleep 0.3 # Pequeña pausa entre clicks
+  end
 end

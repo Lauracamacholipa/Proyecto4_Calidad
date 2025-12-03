@@ -55,3 +55,14 @@ Feature: Checkout Process
     And I should see total of $43.18
     When I complete the purchase
     Then I should see "Thank you for your order!"
+  
+  @checkout @calculations
+  Scenario: Verify tax calculation is mathematically correct
+    Given I have "Sauce Labs Onesie" in the cart
+    And I have "Sauce Labs Bolt T-Shirt" in the cart
+    When I proceed to checkout from cart
+    And I fill checkout information with "Test" "User" "12345"
+    And I continue to checkout overview
+    Then the item total should be $23.98
+    And the tax should be 8% of item total
+    And the total should be item total plus tax
