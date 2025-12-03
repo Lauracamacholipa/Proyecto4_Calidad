@@ -1,75 +1,83 @@
 require 'capybara/cucumber'
 
-# === HELPER METHOD ===
-def wait_for_ui(seconds = 1)
-  sleep seconds
+# === HELPERS ===
+def open_side_menu
+  find('#react-burger-menu-btn').click
+  expect(page).to have_css('.bm-menu-wrap', visible: true, wait: 5)
 end
 
-# === MENU ACTIONS ===
-When('I open the side menu') do
-  wait_for_ui(1)
-  find(:xpath, '//*[@id="react-burger-menu-btn"]').click
-  wait_for_ui(1)
+def close_side_menu
+  find('#react-burger-cross-btn').click
+  expect(page).to have_no_css('.bm-menu-wrap', visible: true, wait: 5)
 end
 
-Then('I should see menu options') do
-  expect(page).to have_xpath('//*[@id="menu_button_container"]/div/div[2]/div[1]', visible: true)
-  
-  expect(page).to have_content('Logout')
-  expect(page).to have_content('Reset App State')
+def click_menu_option(option_text)
+  find('.bm-item-list').find('a', text: option_text).click
 end
 
-When('I close the side menu') do
-  find(:xpath, '//*[@id="react-burger-cross-btn"]').click
-  wait_for_ui(1)
-end
-
-Then('the menu should be closed') do
-  expect(page).to have_no_xpath('//*[@id="menu_button_container"]/div/div[2]/div[1]', visible: true)
-end
-
-# === GENERIC MENU SELECTION ===
-When('I select {string} from menu') do |menu_option|
-  case menu_option
-  when 'Logout'
-    find(:xpath, '//*[@id="logout_sidebar_link"]').click
-  when 'Reset App State'
-    find(:xpath, '//*[@id="reset_sidebar_link"]').click
+def get_cart_badge_count
+  if has_css?('#shopping_cart_container > a > span', wait: 2)
+    find('#shopping_cart_container > a > span').text.to_i
   else
-    raise "Unknown menu option: #{menu_option}"
+    0
   end
-  wait_for_ui(1)
 end
 
-# === LOGOUT VALIDATION ===
-Then('I should see login page') do
-  expect(page.current_url).to eq('https://www.saucedemo.com/')
+# === STEPS ===
+Given('I add {string} to my shopping cart') do |product_name|
+  visit('/inventory.html')
+  expect(page).to have_css('.title', text: 'Products', wait: 10)
   
-  expect(page).to have_xpath('//*[@id="login-button"]')
-  expect(page).to have_content('Accepted usernames are:')
+  product_element = find('.inventory_item_name', text: product_name, wait: 10)
+  container = product_element.ancestor('.inventory_item')
+  container.find('.btn_inventory').click
+  
+  expect(page).to have_css('#shopping_cart_container > a > span', wait: 5)
 end
 
-# === CART MANAGEMENT ===
-Given('I have product {string} in cart') do |product_name|
-  find(:xpath, '//*[@id="add-to-cart-sauce-labs-backpack"]').click
-  wait_for_ui(1)
-  
-  cart_count = find(:xpath, '//*[@id="shopping_cart_container"]/a/span', visible: true)
-  expect(cart_count.text).to eq('1')
-  
-  @product_in_cart = product_name
+When('I click the menu button') do
+  open_side_menu
 end
 
-When('I reload page') do
-  visit current_url
-  wait_for_ui(2)
+When('I click the close menu button') do
+  close_side_menu
+end
+
+Then('I should see menu options including {string} and {string}') do |option1, option2|
+  expect(page).to have_css('.bm-item-list', visible: true, wait: 5)
+  expect(page).to have_content(option1, wait: 5)
+  expect(page).to have_content(option2, wait: 5)
+end
+
+Then('the menu should not be visible') do
+  expect(page).to have_no_css('.bm-menu-wrap', visible: true, wait: 5)
+end
+
+When('I click {string} in the menu') do |option_text|
+  click_menu_option(option_text)
+end
+
+Then('I should be redirected to the login page') do
+  expect(page.current_url).to eq(Capybara.app_host + '/')
+  expect(page).to have_css('#login-button', wait: 10)
+end
+
+When('I return to products page using inventory link') do
+  if page.current_url.include?('/cart.html')
+    find('#continue-shopping', wait: 10).click
+  else
+    visit('/inventory.html')
+  end
+  expect(page).to have_css('.title', text: 'Products', wait: 10)
 end
 
 Then('the cart should be empty') do
-  expect(page).to have_no_xpath('//*[@id="shopping_cart_container"]/a/span')
+  expect(page).to have_no_css('#shopping_cart_container > a > span', wait: 10)
 end
 
-Then('product {string} should show {string}') do |product_name, button_text|
-  button = find(:xpath, '//*[@id="add-to-cart-sauce-labs-backpack"]')
+Then('{string} should show {string} button') do |product_name, button_text|
+  product_element = find('.inventory_item_name', text: product_name, wait: 10)
+  container = product_element.ancestor('.inventory_item')
+  button = container.find('button', wait: 10)
   expect(button.text).to eq(button_text)
 end

@@ -1,145 +1,111 @@
-# Step definitions for product_detail.feature
+require 'capybara/cucumber'
 
-# Given I am on the products page
-Given('I am on the products page') do
-  expect(page).to have_current_path('/inventory.html')
-  expect(page).to have_css('.inventory_list')
+# === HELPERS ===
+def get_cart_badge_count
+  if has_css?('#shopping_cart_container > a > span', wait: 2)
+    find('#shopping_cart_container > a > span').text.to_i
+  else
+    0
+  end
 end
 
-# Given I am viewing the "Sauce Labs Backpack" product detail
-Given('I am viewing the {string} product detail') do |product_name|
+def ensure_on_products_page
+  return if page.current_url.include?('/inventory.html')
   visit('/inventory.html')
-  # Click on the product name to go to detail page
-  product_link = find(:xpath, "//div[contains(@class, 'inventory_item_name') and text()='#{product_name}']")
-  product_link.click
-  # Wait for navigation to complete
-  sleep(2)
-  expect(page.current_path).to include('/inventory-item.html')
+  expect(page).to have_css('.title', text: 'Products', wait: 10)
 end
 
-# When I click on the "Sauce Labs Backpack" product image
+# === STEPS ===
+Given('I am on the products page') do
+  ensure_on_products_page
+end
+
+Given('I am viewing the {string} product detail') do |product_name|
+  ensure_on_products_page
+  
+  product_element = find('.inventory_item_name', text: product_name, wait: 10)
+  product_element.click
+  
+  expect(page).to have_css('.inventory_details_container', wait: 10)
+end
+
 When('I click on the {string} product image') do |product_name|
-  # Click directly on the product name link
-  product_link = find(:xpath, "//div[@class='inventory_item_name ' and text()='#{product_name}']")
-  product_link.click
+  ensure_on_products_page
+  
+  # Encontrar el contenedor del producto y hacer click en la imagen
+  product_element = find('.inventory_item_name', text: product_name, wait: 10)
+  container = product_element.ancestor('.inventory_item')
+  container.find('img.inventory_item_img').click
+  
+  expect(page).to have_css('.inventory_details_container', wait: 10)
 end
 
-# When I click the "Add to cart" button
 When('I click the {string} button') do |button_text|
   case button_text
   when 'Add to cart'
-    # Find the Add to cart button using class instead of specific ID
-    add_button = find(:xpath, '//*[contains(@class, "btn_primary") and contains(@class, "btn_inventory")]')
-    add_button.click
+    find('button', text: 'Add to cart', wait: 10).click
   when 'Remove'
-    # Find the Remove button using class
-    remove_button = find(:xpath, '//*[contains(@class, "btn_secondary") and contains(@class, "btn_inventory")]')
-    remove_button.click
+    find('button', text: 'Remove', wait: 10).click
   when 'Back to products'
-    click_button('back-to-products')
+    find('button', text: 'Back to products', wait: 10).click
   else
-    click_button(button_text.downcase.gsub(' ', '-'))
+    find('button', text: button_text, wait: 10).click
   end
 end
 
-# Then I should see the product detail page
 Then('I should see the product detail page') do
-  expect(page.current_path).to include('/inventory-item.html')
-  expect(page).to have_css('.inventory_details')
+  expect(page).to have_css('.inventory_details_container', wait: 10)
+  expect(page.current_url).to include('/inventory-item.html')
 end
 
-# Then I should see the product name "Sauce Labs Backpack"
-Then('I should see the product name {string}') do |product_name|
-  product_name_element = find(:xpath, '//*[@class="inventory_details_name large_size"]')
-  puts "ONLY FOR TEST PURPOSES: Product name found: #{product_name_element.text}"
-  if product_name_element.text != product_name
-    raise "Product name should be #{product_name} but found #{product_name_element.text}"
-  end
+Then('I should see the product name {string}') do |expected_name|
+  product_name = find('.inventory_details_name', wait: 10).text
+  expect(product_name).to eq(expected_name)
 end
 
-# Then I should see the product description
 Then('I should see the product description') do
-  description_element = find(:xpath, '//*[@class="inventory_details_desc large_size"]')
-  puts "ONLY FOR TEST PURPOSES: Description found: #{description_element.text}"
-  expect(description_element.text).not_to be_empty
+  description = find('.inventory_details_desc', wait: 10).text
+  expect(description).not_to be_empty
+  expect(description.length).to be > 0
 end
 
-# Then I should see the product price "$29.99"
 Then('I should see the product price {string}') do |expected_price|
-  price_element = find(:xpath, '//*[@class="inventory_details_price"]')
-  puts "ONLY FOR TEST PURPOSES: Price found: #{price_element.text}"
-  if price_element.text != expected_price
-    raise "Product price should be #{expected_price} but found #{price_element.text}"
-  end
+  price = find('.inventory_details_price', wait: 10).text
+  expect(price).to eq(expected_price)
 end
 
-# Then I should see the "Add to cart" button is visible
 Then('I should see the {string} button is visible') do |button_text|
-  case button_text
-  when 'Add to cart'
-    button_element = find(:xpath, '//*[contains(@class, "btn_primary") and contains(@class, "btn_inventory")]')
-  when 'Back to products'
-    button_element = find(:xpath, '//*[@id="back-to-products"]')
-  else
-    button_element = find(:xpath, "//*[contains(@class, 'btn') and contains(text(), '#{button_text}')]")
-  end
-  expect(button_element).to be_visible
+  expect(page).to have_css('button', text: button_text, wait: 10, visible: true)
 end
 
-# Then I should see the product image is displayed
 Then('I should see the product image is displayed') do
-  image_element = find(:xpath, '//*[contains(@class, "inventory_details_img")]//img')
-  expect(image_element).to be_visible
-  expect(image_element['src']).not_to be_empty
+  image = find('.inventory_details_img', wait: 10)
+  expect(image).to be_visible
+  expect(image['src']).not_to be_empty
+  expect(image['alt']).not_to be_empty
 end
 
-# Then the shopping cart is empty
 Then('the shopping cart is empty') do
-  cart_badge = page.all(:xpath, '//*[@class="shopping_cart_badge"]')
-  if cart_badge.any?
-    expect(cart_badge.first.text).to eq('0').or be_empty
-  end
+  expect(get_cart_badge_count).to eq(0)
 end
 
-# Then the button text should change to "Remove"
 Then('the button text should change to {string}') do |expected_text|
-  case expected_text
-  when 'Remove'
-    # Find the Remove button using class
-    button_element = find(:xpath, '//*[contains(@class, "btn_secondary") and contains(@class, "btn_inventory")]')
-    expect(button_element.text).to eq('Remove')
-  else
-    button_element = find(:xpath, "//*[contains(@class, 'btn') and text()='#{expected_text}']")
-    expect(button_element).to be_visible
-  end
+  expect(page).to have_css('button', text: expected_text, wait: 10)
 end
 
-# Then the shopping cart badge should display "1" item
 Then('the shopping cart badge should display {string} item') do |item_count|
-  cart_badge = find(:xpath, '//*[@class="shopping_cart_badge"]')
-  puts "ONLY FOR TEST PURPOSES: Cart badge shows: #{cart_badge.text}"
-  if cart_badge.text != item_count
-    raise "Cart badge should show #{item_count} but shows #{cart_badge.text}"
-  end
+  expect(get_cart_badge_count).to eq(item_count.to_i)
 end
 
-# Then I should be able to navigate back to products
 Then('I should be able to navigate back to products') do
-  back_button = find(:xpath, '//*[@id="back-to-products"]')
-  expect(back_button).to be_visible
+  expect(page).to have_css('button', text: 'Back to products', wait: 10, visible: true)
 end
 
-# Then I should return to the inventory page
 Then('I should return to the inventory page') do
-  expect(page).to have_current_path('/inventory.html')
-  expect(page).to have_css('.inventory_list')
+  expect(page.current_url).to include('/inventory.html')
+  expect(page).to have_css('.title', text: 'Products', wait: 10)
 end
 
-# Then the cart badge should still show "1" item
 Then('the cart badge should still show {string} item') do |item_count|
-  cart_badge = find(:xpath, '//*[@class="shopping_cart_badge"]')
-  puts "ONLY FOR TEST PURPOSES: Cart badge still shows: #{cart_badge.text}"
-  if cart_badge.text != item_count
-    raise "Cart badge should still show #{item_count} but shows #{cart_badge.text}"
-  end
+  expect(get_cart_badge_count).to eq(item_count.to_i)
 end

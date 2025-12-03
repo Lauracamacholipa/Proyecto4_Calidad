@@ -27,3 +27,8 @@ Feature: Login to Saucedemo
       | problem_user |
       | error_user   |
       | visual_user  |
+
+@negative @login
+Scenario: Login fails with invalid credentials
+  When I login as "invalid_user" with password "wrong_password"
+  Then I should see error "Epic sadface: Username and password do not match any user in this service"

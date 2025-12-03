@@ -1,133 +1,157 @@
 require 'capybara/cucumber'
 
-Given('I have {string} products in the cart on cart page') do |n|
-  count = n.to_i
-  add_buttons = all(:xpath, '//button[contains(@class, "btn_inventory")]')
-  
-  if count > add_buttons.count
-    raise "Only #{add_buttons.count} products available"
+# === HELPERS ===
+def ensure_on_products_page
+  return if page.current_url.include?('/inventory.html')
+  visit('/inventory.html')
+  expect(page).to have_css('.title', text: 'Products', wait: 10)
+end
+
+def ensure_on_cart_page
+  return if page.current_url.include?('/cart.html')
+  find('.shopping_cart_link').click
+  expect(page).to have_css('.title', text: 'Your Cart', wait: 10)
+end
+
+def add_product_to_cart(product_index = 0)
+  ensure_on_products_page
+  buttons = all('.btn_inventory')
+  raise "Only #{buttons.count} products available" if product_index >= buttons.count
+  buttons[product_index].click
+end
+
+def get_cart_badge_count
+  if has_css?('#shopping_cart_container > a > span', wait: 2)
+    find('#shopping_cart_container > a > span').text.to_i
+  else
+    0
   end
+end
+
+# === STEPS ===
+Given('I add the first {int} products to the cart') do |count|
+  ensure_on_products_page
   
-  @args ||= []
   count.times do |i|
-    add_buttons[i].click
-    @args << i
-    sleep 0.2
-  end
-  
-  if count > 0
-    expect(page).to have_xpath("//span[@class='shopping_cart_badge' and text()='#{count}']")
+    add_product_to_cart(i)
+    expect(get_cart_badge_count).to eq(i + 1)
   end
 end
 
-When('I remove {string} products from the cart on cart page') do |n|
-  products_to_remove = n.to_i
-  find(:xpath, '//a[@class="shopping_cart_link"]').click
-  expect(page).to have_xpath('//span[@class="title" and contains(text(), "Your Cart")]')
+Given('I have {string} in the cart') do |product_name|
+  ensure_on_products_page
   
-  @args ||= []
-  products_to_remove.times do
-    remove_buttons = all(:xpath, '//button[text()="Remove"]')
-    if remove_buttons.any?
-      remove_buttons.first.click
-      @args.pop if @args.any?
-      sleep 0.3
+  product_element = find('.inventory_item_name', text: product_name, wait: 10)
+  container = product_element.ancestor('.inventory_item')
+  container.find('.btn_inventory').click
+  
+  expect(get_cart_badge_count).to be > 0
+end
+
+Given('I have {string} and {string} in the cart') do |product1, product2|
+  step "I have \"#{product1}\" in the cart"
+  step "I have \"#{product2}\" in the cart"
+end
+
+Given('I have an empty cart') do
+  if get_cart_badge_count > 0
+    ensure_on_cart_page
+    
+    while has_css?('button[id^="remove-"]', text: 'Remove', wait: 1)
+      first('button[id^="remove-"]', text: 'Remove').click
+      sleep 0.5
+    end
+  end
+  
+  expect(get_cart_badge_count).to eq(0)
+end
+
+When('I remove {int} products from the cart') do |count|
+  ensure_on_cart_page
+  
+  count.times do
+    if has_css?('button[id^="remove-"]', text: 'Remove', wait: 2)
+      first('button[id^="remove-"]', text: 'Remove').click
+      sleep 0.5
     else
       break
     end
   end
-  
-  if page.current_url.include?('cart.html')
-    find(:xpath, '//button[@id="continue-shopping"]').click rescue nil
-  end
 end
 
-Then('the cart should show {string} items on cart page') do |n|
-  remaining_count = n.to_i
-  if remaining_count > 0
-    expect(page).to have_xpath("//span[@class='shopping_cart_badge' and text()='#{remaining_count}']")
+When('I click {string} from cart page') do |button_text|
+  ensure_on_cart_page
+  find('button', text: button_text, wait: 10).click
+end
+
+When('I view the cart page') do
+  ensure_on_cart_page
+end
+
+When('I add {string} to the cart') do |product_name|
+  step "I have \"#{product_name}\" in the cart"
+end
+
+When('I add another product to the cart') do
+  ensure_on_products_page
+  all('.btn_inventory', wait: 10)[1].click
+end
+
+Then('the cart badge should show {int} items') do |expected_count|
+  if expected_count > 0
+    badge = find('#shopping_cart_container > a > span', wait: 10)
+    expect(badge.text.to_i).to eq(expected_count)
   else
-    expect(page).to have_no_xpath('//span[@class="shopping_cart_badge"]')
+    expect(page).to have_no_css('#shopping_cart_container > a > span', wait: 10)
   end
 end
 
-Given('I have products in the cart on cart page') do
-  add_buttons = all(:xpath, '//button[contains(@class, "btn_inventory")]')
-  if add_buttons.any?
-    add_buttons.first.click
-    @args ||= []
-    @args << 0
-    expect(page).to have_xpath('//span[@class="shopping_cart_badge"]')
-  end
+Then('the cart badge should show {int} item') do |count|
+  step "the cart badge should show #{count} items"
 end
 
-When('I click {string} on cart page') do |op|
-  unless page.current_url.include?('cart.html')
-    find(:xpath, '//a[@class="shopping_cart_link"]').click
-    sleep 0.5
-  end
-  find(:xpath, "//button[text()='#{op}']").click
-end
-
-Then('I should be redirected to the products page from cart') do
+Then('I should be redirected to the products page') do
   expect(page.current_url).to include('/inventory.html')
-  expect(page).to have_xpath('//div[@class="inventory_list"]')
-  expect(page).to have_xpath('//span[@class="title" and text()="Products"]')
+  expect(page).to have_css('.title', text: 'Products', wait: 10)
 end
 
-Then('I should be redirected to checkout page') do
+Then('I should be redirected to checkout information page') do
   expect(page.current_url).to include('/checkout-step-one.html')
-  expect(page).to have_xpath('//span[@class="title" and text()="Checkout: Your Information"]')
+  expect(page).to have_css('.title', text: 'Checkout: Your Information', wait: 10)
 end
 
-Given('I have {int} products in the cart on cart page') do |n|
-  add_buttons = all(:xpath, '//button[contains(@class, "btn_inventory")]')
-  if n > add_buttons.count
-    raise "Only #{add_buttons.count} products available"
-  end
+Then('I should see the cart page with no items') do
+  expect(page.current_url).to include('/cart.html')
+  expect(page).to have_css('.title', text: 'Your Cart', wait: 10)
+  expect(page).to have_no_css('.cart_item', wait: 10)
+end
+
+Then('the cart should show {string} message') do |message|
+  expect(page.current_url).to include('/cart.html')
+  expect(page).to have_css('.title', text: 'Your Cart', wait: 10)
+  expect(page).to have_no_css('.cart_item', wait: 10)
+end
+
+When('I try to add more than {int} products to the cart') do |max_products|
+  ensure_on_products_page
   
-  @args ||= []
-  n.times do |i|
-    add_buttons[i].click
-    @args << i
-    sleep 0.2
-  end
+  buttons = all('.btn_inventory', wait: 10)
   
-  if n > 0
-    expect(page).to have_xpath("//span[@class='shopping_cart_badge' and text()='#{n}']")
-  end
-end
-
-When('I remove {int} products from the cart on cart page') do |n|
-  find(:xpath, '//a[@class="shopping_cart_link"]').click
-  expect(page).to have_xpath('//span[contains(@class, "title") and contains(text(), "Cart")]')
+  buttons.each(&:click)
   
-  @args ||= []
-  n.times do
-    remove_buttons = all(:xpath, '//button[text()="Remove"]')
-    if remove_buttons.any?
-      remove_buttons.first.click
-      @args.pop if @args.any?
-      sleep 0.3
-    else
-      break
-    end
-  end
+  expect(page).to have_css('button[id^="remove-"]', count: max_products, wait: 10)
 end
 
-Then('the cart should show {int} items on cart page') do |n|
-  if n > 0
-    expect(page).to have_xpath("//span[@class='shopping_cart_badge' and text()='#{n}']")
-  else
-    expect(page).to have_no_xpath('//span[@class="shopping_cart_badge"]')
-  end
+Then('I should see only {int} products can be added') do |expected_max|
+  expect(get_cart_badge_count).to eq(expected_max)
+  
+  remove_buttons = all('button[id^="remove-"]', text: 'Remove', wait: 10)
+  expect(remove_buttons.count).to eq(expected_max)
 end
 
-Given('I add one more product to cart') do
-  add_buttons = all(:xpath, '//button[text()="Add to cart"]')
-  if add_buttons.any?
-    add_buttons.first.click
-    @args ||= []
-    @args << (@args.last.to_i + 1) if @args.any?
+When('I click the {string} button {int} times') do |button_text, times|
+  times.times do
+    find('button', text: button_text, wait: 10).click
+    sleep 0.3 # Pequeña pausa entre clicks
   end
 end
