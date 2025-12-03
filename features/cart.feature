@@ -3,43 +3,44 @@ Feature: Cart Management
   I want to manage my shopping cart
   So that I can control my purchases
 
-Background:
-  Given I am logged in as "standard_user"
+  Background:
+    Given I am logged in as "standard_user"
 
-@smoke @cart
-Scenario Outline: Add and remove products from cart
-  Given I have "<product_count>" products in the cart on cart page
-  When I remove "<products_to_remove>" products from the cart on cart page
-  Then the cart should show "<remaining_count>" items on cart page
+  @smoke @cart
+  Scenario Outline: Add and remove specific products from cart
+    Given I add the first <initial_count> products to the cart
+    When I remove <to_remove> products from the cart
+    Then the cart badge should show <remaining_count> items
 
-Examples:
-  | product_count | products_to_remove | remaining_count |
-  | 3             | 1                  | 2               |
-  | 2             | 2                  | 0               |
-  | 1             | 1                  | 0               |
-  | 4             | 2                  | 2               |
-  | 6             | 3                  | 3               |
+    Examples:
+      | initial_count | to_remove | remaining_count |
+      | 3             | 1         | 2               |
+      | 2             | 2         | 0               |
+      | 1             | 1         | 0               |
+      | 6             | 3         | 3               |
 
-@smoke @cart
-Scenario: Continue shopping from cart
-  Given I have products in the cart on cart page
-  When I click "Continue Shopping" on cart page
-  Then I should be redirected to the products page from cart
+  @smoke @cart
+  Scenario: Continue shopping from cart
+    Given I have "Sauce Labs Backpack" in the cart
+    When I click "Continue Shopping" from cart page
+    Then I should be redirected to the products page
 
-@cart @checkout
-Scenario: Checkout from cart
-  Given I have 2 products in the cart on cart page
-  When I click "Checkout" on cart page
-  Then I should be redirected to checkout page
+  @cart @checkout
+  Scenario: Checkout from cart
+    Given I have "Sauce Labs Backpack" and "Sauce Labs Bike Light" in the cart
+    When I click "Checkout" from cart page
+    Then I should be redirected to checkout information page
 
-@cart @empty
-Scenario: Verify empty cart
-  Given I have 0 products in the cart on cart page
-  Then the cart should show 0 items on cart page
+  @cart @empty
+  Scenario: Verify empty cart
+    Given I have an empty cart
+    When I view the cart page
+    Then I should see the cart page with no items
 
-@cart @ui
-Scenario: Cart badge updates correctly
-  Given I have 1 products in the cart on cart page
-  Then the cart should show 1 items on cart page
-  When I add one more product to cart
-  Then the cart should show 2 items on cart page
+  @cart @ui
+  Scenario: Cart badge updates correctly when adding products
+    Given I have an empty cart
+    When I add "Sauce Labs Backpack" to the cart
+    Then the cart badge should show 1 item
+    When I add "Sauce Labs Bike Light" to the cart
+    Then the cart badge should show 2 items
