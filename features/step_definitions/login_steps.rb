@@ -37,3 +37,12 @@ Given('I am logged in as {string}') do |username|
   
   @logged_in_user = username
 end
+
+When('I click the login button') do
+  find('#login-button', wait: 5).click
+end
+
+Then('I should see inventory page within {int} seconds') do |seconds|
+  expect(page).to have_css('.title', text: 'Products', wait: seconds)
+  expect(page.current_url).to include('/inventory.html')
+end
