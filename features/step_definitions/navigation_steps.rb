@@ -23,6 +23,18 @@ def get_cart_badge_count
   end
 end
 
+def ensure_on_products_page
+  return if page.current_url.include?('/inventory.html')
+  visit('/inventory.html')
+  expect(page).to have_css('.title', text: 'Products', wait: 10)
+end
+
+def ensure_on_cart_page
+  return if page.current_url.include?('/cart.html')
+  find('.shopping_cart_link').click
+  expect(page).to have_css('.title', text: 'Your Cart', wait: 10)
+end
+
 # === STEPS ===
 Given('I add {string} to my shopping cart') do |product_name|
   visit('/inventory.html')
@@ -53,13 +65,27 @@ Then('the menu should not be visible') do
   expect(page).to have_no_css('.bm-menu-wrap', visible: true, wait: 5)
 end
 
-When('I click {string} in the menu') do |option_text|
+When('I click {string} in side menu') do |option_text|
   click_menu_option(option_text)
 end
 
 Then('I should be redirected to the login page') do
   expect(page.current_url).to eq(Capybara.app_host + '/')
   expect(page).to have_css('#login-button', wait: 10)
+end
+
+Given('I go to the cart page') do
+  ensure_on_cart_page
+end
+
+When('I click the {string} button in cart page') do |button_text|
+  ensure_on_cart_page
+  find('button', text: button_text, wait: 10).click
+end
+
+Then('I should be on products page') do
+  expect(page.current_url).to include('/inventory.html')
+  expect(page).to have_css('.title', text: 'Products', wait: 10)
 end
 
 When('I return to products page using inventory link') do
@@ -69,6 +95,15 @@ When('I return to products page using inventory link') do
     visit('/inventory.html')
   end
   expect(page).to have_css('.title', text: 'Products', wait: 10)
+end
+
+When('I use browser back button') do
+  page.go_back
+  sleep 1
+end
+
+Then('the URL should contain {string}') do |expected_url_part|
+  expect(page.current_url).to include(expected_url_part)
 end
 
 Then('the cart should be empty') do

@@ -28,7 +28,30 @@ Feature: Login to Saucedemo
       | error_user   |
       | visual_user  |
 
-@negative @login
-Scenario: Login fails with invalid credentials
-  When I login as "invalid_user" with password "wrong_password"
-  Then I should see error "Epic sadface: Username and password do not match any user in this service"
+  @negative @login
+  Scenario: Login fails with invalid credentials
+    When I login as "invalid_user" with password "wrong_password"
+    Then I should see error "Epic sadface: Username and password do not match any user in this service"
+
+  @performance @login
+  Scenario: Login with performance glitch user
+    When I login as "performance_glitch_user" with password "secret_sauce"
+    Then I should see inventory page within 10 seconds
+
+  @security @login
+  Scenario: Login with empty credentials
+    When I login as "" with password ""
+    And I click the login button
+    Then I should see error "Epic sadface: Username is required"
+
+  @security @login
+  Scenario: Login with password only
+    When I login as "" with password "secret_sauce"
+    And I click the login button
+    Then I should see error "Epic sadface: Username is required"
+
+  @security @login  
+  Scenario: Login with username only
+    When I login as "standard_user" with password ""
+    And I click the login button
+    Then I should see error "Epic sadface: Password is required"
