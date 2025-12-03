@@ -1,133 +1,88 @@
 require 'capybara/cucumber'
 
-Given('I have {string} products in the cart on cart page') do |n|
-  count = n.to_i
-  add_buttons = all(:xpath, '//button[contains(@class, "btn_inventory")]')
+Given('I have {int} products in the cart on cart page') do |count|
+  # Ir a products si no estamos allí
+  visit('/inventory.html') unless page.current_url.include?('inventory.html')
+  
+  add_buttons = all(:xpath, '//button[contains(@class, "btn_inventory") and contains(text(), "Add to cart")]')
   
   if count > add_buttons.count
     raise "Only #{add_buttons.count} products available"
   end
   
-  @args ||= []
   count.times do |i|
     add_buttons[i].click
-    @args << i
-    sleep 0.2
   end
   
   if count > 0
-    expect(page).to have_xpath("//span[@class='shopping_cart_badge' and text()='#{count}']")
+    expect(page).to have_xpath("//span[@class='shopping_cart_badge' and text()='#{count}']", wait: 5)
   end
 end
 
-When('I remove {string} products from the cart on cart page') do |n|
-  products_to_remove = n.to_i
+# Para mantener compatibilidad con string
+Given('I have {string} products in the cart on cart page') do |str_count|
+  count = str_count.to_i
+  step "I have #{count} products in the cart on cart page"
+end
+
+When('I remove {int} products from the cart on cart page') do |count|
+  # Ir al carrito
   find(:xpath, '//a[@class="shopping_cart_link"]').click
-  expect(page).to have_xpath('//span[@class="title" and contains(text(), "Your Cart")]')
+  expect(page).to have_xpath('//span[@class="title" and contains(text(), "Your Cart")]', wait: 5)
   
-  @args ||= []
-  products_to_remove.times do
+  count.times do
     remove_buttons = all(:xpath, '//button[text()="Remove"]')
-    if remove_buttons.any?
-      remove_buttons.first.click
-      @args.pop if @args.any?
-      sleep 0.3
-    else
-      break
-    end
+    break unless remove_buttons.any?
+    remove_buttons.first.click
   end
   
+  # Volver a products si aún estamos en carrito
   if page.current_url.include?('cart.html')
-    find(:xpath, '//button[@id="continue-shopping"]').click rescue nil
+    find(:xpath, '//button[@id="continue-shopping"]').click if has_xpath?('//button[@id="continue-shopping"]')
   end
 end
 
-Then('the cart should show {string} items on cart page') do |n|
-  remaining_count = n.to_i
-  if remaining_count > 0
-    expect(page).to have_xpath("//span[@class='shopping_cart_badge' and text()='#{remaining_count}']")
+Then('the cart should show {int} items on cart page') do |count|
+  if count > 0
+    expect(page).to have_xpath("//span[@class='shopping_cart_badge' and text()='#{count}']", wait: 5)
   else
-    expect(page).to have_no_xpath('//span[@class="shopping_cart_badge"]')
+    expect(page).to have_no_xpath('//span[@class="shopping_cart_badge"]', wait: 5)
   end
 end
 
 Given('I have products in the cart on cart page') do
-  add_buttons = all(:xpath, '//button[contains(@class, "btn_inventory")]')
-  if add_buttons.any?
-    add_buttons.first.click
-    @args ||= []
-    @args << 0
-    expect(page).to have_xpath('//span[@class="shopping_cart_badge"]')
-  end
+  step 'I have 1 products in the cart on cart page'
 end
 
-When('I click {string} on cart page') do |op|
+When('I click {string} on cart page') do |button_text|
+  # Ir al carrito si no estamos allí
   unless page.current_url.include?('cart.html')
     find(:xpath, '//a[@class="shopping_cart_link"]').click
-    sleep 0.5
+    expect(page).to have_xpath('//span[@class="title" and contains(text(), "Your Cart")]', wait: 5)
   end
-  find(:xpath, "//button[text()='#{op}']").click
+  
+  find(:xpath, "//button[text()='#{button_text}']").click
 end
 
 Then('I should be redirected to the products page from cart') do
   expect(page.current_url).to include('/inventory.html')
-  expect(page).to have_xpath('//div[@class="inventory_list"]')
-  expect(page).to have_xpath('//span[@class="title" and text()="Products"]')
+  expect(page).to have_xpath('//div[@class="inventory_list"]', wait: 5)
+  expect(page).to have_xpath('//span[@class="title" and text()="Products"]', wait: 5)
 end
 
 Then('I should be redirected to checkout page') do
   expect(page.current_url).to include('/checkout-step-one.html')
-  expect(page).to have_xpath('//span[@class="title" and text()="Checkout: Your Information"]')
-end
-
-Given('I have {int} products in the cart on cart page') do |n|
-  add_buttons = all(:xpath, '//button[contains(@class, "btn_inventory")]')
-  if n > add_buttons.count
-    raise "Only #{add_buttons.count} products available"
-  end
-  
-  @args ||= []
-  n.times do |i|
-    add_buttons[i].click
-    @args << i
-    sleep 0.2
-  end
-  
-  if n > 0
-    expect(page).to have_xpath("//span[@class='shopping_cart_badge' and text()='#{n}']")
-  end
-end
-
-When('I remove {int} products from the cart on cart page') do |n|
-  find(:xpath, '//a[@class="shopping_cart_link"]').click
-  expect(page).to have_xpath('//span[contains(@class, "title") and contains(text(), "Cart")]')
-  
-  @args ||= []
-  n.times do
-    remove_buttons = all(:xpath, '//button[text()="Remove"]')
-    if remove_buttons.any?
-      remove_buttons.first.click
-      @args.pop if @args.any?
-      sleep 0.3
-    else
-      break
-    end
-  end
-end
-
-Then('the cart should show {int} items on cart page') do |n|
-  if n > 0
-    expect(page).to have_xpath("//span[@class='shopping_cart_badge' and text()='#{n}']")
-  else
-    expect(page).to have_no_xpath('//span[@class="shopping_cart_badge"]')
-  end
+  expect(page).to have_xpath('//span[@class="title" and text()="Checkout: Your Information"]', wait: 5)
 end
 
 Given('I add one more product to cart') do
+  # Asumimos que estamos en products page
   add_buttons = all(:xpath, '//button[text()="Add to cart"]')
-  if add_buttons.any?
-    add_buttons.first.click
-    @args ||= []
-    @args << (@args.last.to_i + 1) if @args.any?
-  end
+  raise 'No hay productos para agregar' unless add_buttons.any?
+  
+  add_buttons.first.click
+  
+  # Verificar que se actualizó el badge
+  current_badge = find(:xpath, '//span[@class="shopping_cart_badge"]').text.to_i
+  expect(current_badge).to be > 0
 end

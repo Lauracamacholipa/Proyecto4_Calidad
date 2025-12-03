@@ -61,3 +61,22 @@ Scenario: Navigate back from checkout information
   When I proceed to checkout
   And I click cancel button on checkout page
   Then I should be redirected to the cart page
+
+@checkout @prices
+Scenario: Verify payment totals are correct
+  Given I have 2 products in the cart
+  When I proceed to checkout
+  And I fill checkout information with "Ana" "Rodriguez" "10101"
+  Then I should see the correct payment total including tax
+  And I complete the purchase
+  Then I should see the order confirmation
+
+@checkout @prices  
+Scenario: Verify itemized prices in checkout overview
+  Given I have product "Sauce Labs Backpack" in the cart
+  And I have product "Sauce Labs Bike Light" in the cart
+  When I proceed to checkout
+  And I fill checkout information with "Luis" "Martinez" "20202"
+  Then I should see price "$29.99" for "Sauce Labs Backpack"
+  And I should see price "$9.99" for "Sauce Labs Bike Light"
+  And I should see the correct payment total including tax
