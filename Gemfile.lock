@@ -111,6 +111,7 @@ DEPENDENCIES
   capybara-screenshot
   cucumber (~> 3.1.0)
   cucumber-api (~> 0.9)
+  json
   report_builder (~> 1.9)
   rspec
   selenium-webdriver
