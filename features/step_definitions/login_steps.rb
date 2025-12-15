@@ -1,43 +1,37 @@
 require 'capybara/cucumber'
+require_relative '../../page_objects/login_page'
+
+# Initialize page object
+def login_page
+  @login_page ||= LoginPage.new
+end
 
 Given('I am on the login page') do
-  visit('/')
-  expect(page).to have_css('#user-name', wait: 5)
-  expect(page).to have_css('#login-button', wait: 5)
+  login_page.open
 end
 
 When('I login as {string} with password {string}') do |username, password|
-  fill_in 'user-name', with: username, wait: 5
-  fill_in 'password', with: password, wait: 5
-  find('#login-button', wait: 5).click
-  
+  login_page.login(username, password)
   @current_user = username
 end
 
 Then('I should see inventory page') do
-  expect(page.current_url).to include('/inventory.html')
-  expect(page).to have_css('.title', text: 'Products')
+  expect(login_page.on_inventory_page?).to be true
 end
 
 Then('I should see product {string}') do |product_name|
-  expect(page).to have_css('.inventory_item_name', text: product_name, wait: 5)
+  expect(login_page.product_visible?(product_name)).to be true
 end
 
 Then('I should see error {string}') do |expected_error|
-  error_element = find('[data-test="error"]', wait: 5)
-  expect(error_element.text).to eq(expected_error)
+  expect(login_page.error_message).to eq(expected_error)
 end
 
 Given('I am logged in as {string}') do |username|
-  steps %Q{
-    Given I am on the login page
-    When I login as "#{username}" with password "secret_sauce"
-    Then I should see inventory page
-  }
-  
+  login_page.login_as(username)
   @logged_in_user = username
 end
 
 When('I click the login button') do
-  find('#login-button', wait: 5).click
+  login_page.click_login
 end

@@ -1,28 +1,12 @@
 require 'capybara/cucumber'
+require_relative '../../page_objects/navigation_page'
+
+# Initialize page object
+def navigation_page
+  @navigation_page ||= NavigationPage.new
+end
 
 # === HELPERS ===
-def open_side_menu
-  find('#react-burger-menu-btn').click
-  expect(page).to have_css('.bm-menu-wrap', visible: true, wait: 5)
-end
-
-def close_side_menu
-  find('#react-burger-cross-btn').click
-  expect(page).to have_no_css('.bm-menu-wrap', visible: true, wait: 5)
-end
-
-def click_menu_option(option_text)
-  find('.bm-item-list').find('a', text: option_text).click
-end
-
-def get_cart_badge_count
-  if has_css?('#shopping_cart_container > a > span', wait: 2)
-    find('#shopping_cart_container > a > span').text.to_i
-  else
-    0
-  end
-end
-
 def ensure_on_products_page
   return if page.current_url.include?('/inventory.html')
   visit('/inventory.html')
@@ -31,7 +15,7 @@ end
 
 def ensure_on_cart_page
   return if page.current_url.include?('/cart.html')
-  find('.shopping_cart_link').click
+  navigation_page.go_to_cart
   expect(page).to have_css('.title', text: 'Your Cart', wait: 10)
 end
 
@@ -44,34 +28,33 @@ Given('I add {string} to my shopping cart') do |product_name|
   container = product_element.ancestor('.inventory_item')
   container.find('.btn_inventory').click
   
-  expect(page).to have_css('#shopping_cart_container > a > span', wait: 5)
+  expect(navigation_page.cart_has_items?).to be true
 end
 
 When('I click the menu button') do
-  open_side_menu
+  navigation_page.open_menu
 end
 
 When('I click the close menu button') do
-  close_side_menu
+  navigation_page.close_menu
 end
 
 Then('I should see menu options including {string} and {string}') do |option1, option2|
-  expect(page).to have_css('.bm-item-list', visible: true, wait: 5)
-  expect(page).to have_content(option1, wait: 5)
-  expect(page).to have_content(option2, wait: 5)
+  expect(navigation_page.menu_visible?).to be true
+  expect(navigation_page.menu_option_exists?(option1)).to be true
+  expect(navigation_page.menu_option_exists?(option2)).to be true
 end
 
 Then('the menu should not be visible') do
-  expect(page).to have_no_css('.bm-menu-wrap', visible: true, wait: 5)
+  expect(navigation_page.menu_hidden?).to be true
 end
 
 When('I click {string} in side menu') do |option_text|
-  click_menu_option(option_text)
+  navigation_page.click_menu_option(option_text)
 end
 
 Then('I should be redirected to the login page') do
-  expect(page.current_url).to eq(Capybara.app_host + '/')
-  expect(page).to have_css('#login-button', wait: 10)
+  expect(navigation_page.on_login_page?).to be true
 end
 
 Given('I go to the cart page') do
@@ -84,8 +67,7 @@ When('I click the {string} button in cart page') do |button_text|
 end
 
 Then('I should be on products page') do
-  expect(page.current_url).to include('/inventory.html')
-  expect(page).to have_css('.title', text: 'Products', wait: 10)
+  expect(navigation_page.on_products_page?).to be true
 end
 
 When('I return to products page using inventory link') do
@@ -94,7 +76,7 @@ When('I return to products page using inventory link') do
   else
     visit('/inventory.html')
   end
-  expect(page).to have_css('.title', text: 'Products', wait: 10)
+  expect(navigation_page.on_products_page?).to be true
 end
 
 When('I use browser back button') do
@@ -103,11 +85,11 @@ When('I use browser back button') do
 end
 
 Then('the URL should contain {string}') do |expected_url_part|
-  expect(page.current_url).to include(expected_url_part)
+  expect(navigation_page.url_includes?(expected_url_part)).to be true
 end
 
 Then('the cart should be empty') do
-  expect(page).to have_no_css('#shopping_cart_container > a > span', wait: 10)
+  expect(navigation_page.cart_has_items?).to be false
 end
 
 Then('{string} should show {string} button') do |product_name, button_text|
