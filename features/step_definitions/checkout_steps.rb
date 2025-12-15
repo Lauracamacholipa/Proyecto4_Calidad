@@ -1,49 +1,14 @@
 require 'capybara/cucumber'
+require_relative '../../page_objects/checkout_page'
+require_relative '../../page_objects/navigation_page'
 
-# === HELPERS ===
-def extract_price(price_text)
-  price_text.scan(/\d+\.\d+/).first.to_f
+# Initialize page objects
+def checkout_page
+  @checkout_page ||= CheckoutPage.new
 end
 
-def find_and_click_button(button_text, options = {})
-  wait_time = options[:wait] || 10
-  
-  selectors = [
-    "button[data-test*='#{button_text.downcase}']",
-    "##{button_text.downcase}",
-    "button:contains('#{button_text}')",
-    "input[value='#{button_text}']",
-    "a:contains('#{button_text}')"
-  ]
-  
-  selectors.each do |selector|
-    if has_css?(selector, wait: 1)
-      find(selector, wait: wait_time).click
-      return true
-    end
-  end
-  
-  find('button, input, a', text: button_text, wait: wait_time).click
-end
-
-def ensure_on_checkout_step(step_name)
-  expected_title = case step_name
-                   when :information then 'Checkout: Your Information'
-                   when :overview then 'Checkout: Overview'
-                   when :complete then 'Checkout: Complete'
-                   end
-  
-  unless find('.title', wait: 5).text.include?(expected_title)
-    raise "Not on #{step_name} page. Current: #{find('.title').text}"
-  end
-end
-
-def get_cart_badge_count
-  if has_css?('#shopping_cart_container > a > span', wait: 2)
-    find('#shopping_cart_container > a > span').text.to_i
-  else
-    0
-  end
+def navigation_page
+  @navigation_page ||= NavigationPage.new
 end
 
 # === STEPS ===
@@ -56,7 +21,7 @@ Given('I have the following products in cart:') do |table|
     container = product_element.ancestor('.inventory_item')
     container.find('.btn_inventory').click
     
-    expect(page).to have_css('#shopping_cart_container > a > span', wait: 5)
+    expect(navigation_page.cart_has_items?).to be true
   end
 end
 
@@ -68,41 +33,42 @@ Given('I have product {string} in the cart') do |product_name|
   container = product_element.ancestor('.inventory_item')
   container.find('.btn_inventory').click
   
-  expect(page).to have_css('#shopping_cart_container > a > span', wait: 5)
+  expect(navigation_page.cart_has_items?).to be true
 end
 
 When('I proceed to checkout from cart') do
-  find('.shopping_cart_link').click
-  expect(page).to have_css('.title', text: 'Your Cart', wait: 10)
-  find_and_click_button('Checkout')
+  checkout_page.proceed_to_checkout
 end
 
 When('I fill checkout information with first name {string}, last name {string} and zip code {string}') do |first_name, last_name, postal_code|
-  ensure_on_checkout_step(:information)
-  
-  fill_in 'first-name', with: first_name, wait: 5
-  fill_in 'last-name', with: last_name, wait: 5
-  fill_in 'postal-code', with: postal_code, wait: 5
+  checkout_page.fill_shipping_info(
+    first_name: first_name,
+    last_name: last_name,
+    postal_code: postal_code
+  )
 end
 
 When('I click {string}') do |button_text|
-  find_and_click_button(button_text)
+  case button_text
+  when 'Continue'
+    checkout_page.click_continue
+  when 'Cancel'
+    checkout_page.click_cancel
+  else
+    find('button, input, a', text: button_text, wait: 10).click
+  end
 end
 
 When('I continue to checkout overview') do
-  ensure_on_checkout_step(:information)
-  find_and_click_button('Continue')
-  ensure_on_checkout_step(:overview)
+  checkout_page.continue_to_overview
 end
 
 When('I complete the purchase') do
-  ensure_on_checkout_step(:overview)
-  find_and_click_button('Finish')
-  ensure_on_checkout_step(:complete)
+  checkout_page.finish_purchase
 end
 
 When('I cancel checkout') do
-  find_and_click_button('Cancel')
+  checkout_page.click_cancel
 end
 
 Then('I should see {string}') do |expected_text|
@@ -110,68 +76,45 @@ Then('I should see {string}') do |expected_text|
 end
 
 Then('the order total should be ${float} including tax') do |expected_total|
-  current_title = find('.title', wait: 5).text
-  
-  if current_title.include?('Checkout: Overview')
-    item_total = extract_price(find('.summary_subtotal_label').text)
-    tax = extract_price(find('.summary_tax_label').text)
-    total = extract_price(find('.summary_total_label').text)
-    
-    expect(item_total + tax).to eq(total)
-    expect(total).to eq(expected_total)
-  elsif current_title.include?('Checkout: Complete')
-    expect(page).to have_content('Thank you for your order!', wait: 10)
+  if checkout_page.on_checkout_overview_page?
+    summary = checkout_page.get_order_summary
+    expect(summary[:item_total] + summary[:tax]).to eq(summary[:total])
+    expect(summary[:total]).to eq(expected_total)
+  elsif checkout_page.on_checkout_complete_page?
+    expect(checkout_page.order_completed?).to be true
   else
-    raise "Not on checkout overview or complete page. Current: #{current_title}"
+    raise "Not on checkout overview or complete page"
   end
 end
 
 Then('I should see checkout error {string}') do |error_message|
-  error_element = find('[data-test="error"], .error-message-container h3', wait: 10)
-  expect(error_element.text).to include(error_message)
+  expect(checkout_page.error_message).to include(error_message)
 end
 
 Then('I should be redirected to the cart page') do
-  expect(page.current_url).to include('/cart.html')
-  expect(page).to have_css('.title', text: 'Your Cart', wait: 10)
+  expect(checkout_page.on_cart_page?).to be true
 end
 
 Then('I should see item total of ${float}') do |expected_total|
-  ensure_on_checkout_step(:overview)
-  item_total = extract_price(find('.summary_subtotal_label').text)
-  expect(item_total).to eq(expected_total)
+  expect(checkout_page.item_total).to eq(expected_total)
 end
 
 Then('I should see tax of ${float}') do |expected_tax|
-  ensure_on_checkout_step(:overview)
-  tax = extract_price(find('.summary_tax_label').text)
-  expect(tax).to eq(expected_tax)
+  expect(checkout_page.tax_amount).to eq(expected_tax)
 end
 
 Then('I should see total of ${float}') do |expected_total|
-  ensure_on_checkout_step(:overview)
-  total = extract_price(find('.summary_total_label').text)
-  expect(total).to eq(expected_total)
+  expect(checkout_page.total_amount).to eq(expected_total)
 end
 
 Then('the tax should be {int}% of item total') do |tax_percentage|
-  item_total = extract_price(find('.summary_subtotal_label').text)
-  tax = extract_price(find('.summary_tax_label').text)
-  expected_tax = (item_total * tax_percentage / 100).round(2)
-  
-  expect(tax).to eq(expected_tax)
+  expect(checkout_page.verify_tax_percentage(tax_percentage)).to be true
 end
 
 Then('the total should be item total plus tax') do
-  item_total = extract_price(find('.summary_subtotal_label').text)
-  tax = extract_price(find('.summary_tax_label').text)
-  total = extract_price(find('.summary_total_label').text)
-  
-  expect(total).to eq((item_total + tax).round(2))
+  expect(checkout_page.verify_total_calculation).to be true
 end
 
 Then('the item total should be ${float}') do |expected_total|
-  ensure_on_checkout_step(:overview)
-  item_total = extract_price(find('.summary_subtotal_label').text)
-  expect(item_total).to eq(expected_total)
+  expect(checkout_page.item_total).to eq(expected_total)
 end
