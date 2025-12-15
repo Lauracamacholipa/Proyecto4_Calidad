@@ -16,7 +16,7 @@ end
 
 Then('I should see inventory page') do
   expect(page.current_url).to include('/inventory.html')
-  expect(page).to have_css('.title', text: 'Products', wait: 5)
+  expect(page).to have_css('.title', text: 'Products')
 end
 
 Then('I should see product {string}') do |product_name|
@@ -24,7 +24,7 @@ Then('I should see product {string}') do |product_name|
 end
 
 Then('I should see error {string}') do |expected_error|
-  error_element = find('#login_button_container > div > form > div.error-message-container.error > h3', wait: 5)
+  error_element = find('[data-test="error"]', wait: 5)
   expect(error_element.text).to eq(expected_error)
 end
 
@@ -40,9 +40,4 @@ end
 
 When('I click the login button') do
   find('#login-button', wait: 5).click
-end
-
-Then('I should see inventory page within {int} seconds') do |seconds|
-  expect(page).to have_css('.title', text: 'Products', wait: seconds)
-  expect(page.current_url).to include('/inventory.html')
 end

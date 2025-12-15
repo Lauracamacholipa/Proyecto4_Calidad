@@ -36,7 +36,7 @@ Feature: Login to Saucedemo
   @performance @login
   Scenario: Login with performance glitch user
     When I login as "performance_glitch_user" with password "secret_sauce"
-    Then I should see inventory page within 10 seconds
+    Then I should see inventory page
 
   @security @login
   Scenario: Login with empty credentials
