@@ -1,8 +1,12 @@
 require 'capybara/cucumber'
+require 'rspec/expectations'
+
 require_relative '../../page_objects/checkout_page'
 require_relative '../../page_objects/navigation_page'
 
-# Initialize page objects
+# =========================
+# Page Objects
+# =========================
 def checkout_page
   @checkout_page ||= CheckoutPage.new
 end
@@ -11,31 +15,36 @@ def navigation_page
   @navigation_page ||= NavigationPage.new
 end
 
-# === STEPS ===
+# =========================
+# GIVEN
+# =========================
 Given('I have the following products in cart:') do |table|
   visit('/inventory.html')
   expect(page).to have_css('.title', text: 'Products', wait: 10)
-  
+
   table.raw.flatten.each do |product_name|
     product_element = find('.inventory_item_name', text: product_name, wait: 10)
     container = product_element.ancestor('.inventory_item')
     container.find('.btn_inventory').click
-    
-    expect(navigation_page.cart_has_items?).to be true
+
+    expect(navigation_page.cart_has_items?).to be true, "Product #{product_name} was not added to cart"
   end
 end
 
 Given('I have product {string} in the cart') do |product_name|
   visit('/inventory.html')
   expect(page).to have_css('.title', text: 'Products', wait: 10)
-  
+
   product_element = find('.inventory_item_name', text: product_name, wait: 10)
   container = product_element.ancestor('.inventory_item')
   container.find('.btn_inventory').click
-  
-  expect(navigation_page.cart_has_items?).to be true
+
+  expect(navigation_page.cart_has_items?).to be true, "Product #{product_name} was not added to cart"
 end
 
+# =========================
+# WHEN
+# =========================
 When('I proceed to checkout from cart') do
   checkout_page.proceed_to_checkout
 end
@@ -71,6 +80,9 @@ When('I cancel checkout') do
   checkout_page.click_cancel
 end
 
+# =========================
+# THEN
+# =========================
 Then('I should see {string}') do |expected_text|
   expect(page).to have_content(expected_text, wait: 10)
 end
