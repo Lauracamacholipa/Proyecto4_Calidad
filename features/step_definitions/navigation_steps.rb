@@ -6,19 +6,6 @@ def navigation_page
   @navigation_page ||= NavigationPage.new
 end
 
-# === HELPERS ===
-def ensure_on_products_page
-  return if page.current_url.include?('/inventory.html')
-  visit('/inventory.html')
-  expect(page).to have_css('.title', text: 'Products', wait: 10)
-end
-
-def ensure_on_cart_page
-  return if page.current_url.include?('/cart.html')
-  navigation_page.go_to_cart
-  expect(page).to have_css('.title', text: 'Your Cart', wait: 10)
-end
-
 # === STEPS ===
 Given('I add {string} to my shopping cart') do |product_name|
   visit('/inventory.html')
@@ -58,11 +45,12 @@ Then('I should be redirected to the login page') do
 end
 
 Given('I go to the cart page') do
-  ensure_on_cart_page
+  navigation_page.go_to_cart
+  expect(page).to have_css('.title', text: 'Your Cart', wait: 10)
 end
 
 When('I click the {string} button in cart page') do |button_text|
-  ensure_on_cart_page
+  navigation_page.go_to_cart unless page.current_url.include?('/cart.html')
   find('button', text: button_text, wait: 10).click
 end
 
