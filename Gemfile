@@ -1,11 +1,9 @@
 source 'https://rubygems.org'
 
-gem 'cucumber'
+gem 'cucumber', '~> 3.1.0'
 gem 'capybara'
 gem 'selenium-webdriver'
 gem 'rspec'
 gem 'capybara-screenshot'
-gem 'cucumber-reporting', '~> 6.0'  
-gem 'json'                        
-gem 'cucumber-api'      
 gem 'report_builder', '~> 1.9'
+gem 'cucumber-api', '~> 0.9'

@@ -77,7 +77,7 @@ When('I proceed to checkout from cart') do
   find_and_click_button('Checkout')
 end
 
-When('I fill checkout information with {string} {string} {string}') do |first_name, last_name, postal_code|
+When('I fill checkout information with first name {string}, last name {string} and zip code {string}') do |first_name, last_name, postal_code|
   ensure_on_checkout_step(:information)
   
   fill_in 'first-name', with: first_name, wait: 5

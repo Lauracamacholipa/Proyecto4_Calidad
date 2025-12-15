@@ -10,7 +10,7 @@ Feature: Checkout Process
   Scenario Outline: Complete checkout with different information
     Given I have "Sauce Labs Backpack" and "Sauce Labs Bike Light" in the cart
     When I proceed to checkout from cart
-    And I fill checkout information with "<first>" "<last>" "<zip>"
+    And I fill checkout information with first name "<first>", last name "<last>" and zip code "<zip>"
     And I continue to checkout overview
     Then I should see item total of $39.98
     And I should see tax of $3.20
@@ -27,7 +27,7 @@ Feature: Checkout Process
   Scenario Outline: Checkout validation errors for missing fields
     Given I have "Sauce Labs Backpack" in the cart
     When I proceed to checkout from cart
-    And I fill checkout information with "<first>" "<last>" "<zip>"
+    And I fill checkout information with first name "<first>", last name "<last>" and zip code "<zip>"
     And I click "Continue"
     Then I should see checkout error "<error_message>"
 
@@ -48,7 +48,7 @@ Feature: Checkout Process
   Scenario: Verify payment totals are calculated correctly
     Given I have "Sauce Labs Backpack" and "Sauce Labs Bike Light" in the cart
     When I proceed to checkout from cart
-    And I fill checkout information with "Ana" "Rodriguez" "10101"
+    And I fill checkout information with first name "Ana", last name "Rodriguez" and zip code "10101"
     And I continue to checkout overview
     Then I should see item total of $39.98
     And I should see tax of $3.20
@@ -61,7 +61,7 @@ Feature: Checkout Process
     Given I have "Sauce Labs Onesie" in the cart
     And I have "Sauce Labs Bolt T-Shirt" in the cart
     When I proceed to checkout from cart
-    And I fill checkout information with "Test" "User" "12345"
+    And I fill checkout information with first name "Test", last name "User" and zip code "12345"
     And I continue to checkout overview
     Then the item total should be $23.98
     And the tax should be 8% of item total

@@ -24,7 +24,7 @@ Then('I should see product {string}') do |product_name|
 end
 
 Then('I should see error {string}') do |expected_error|
-  error_element = find('#login_button_container > div > form > div.error-message-container.error > h3', wait: 5)
+  error_element = find('[data-test="error"]', wait: 5)
   expect(error_element.text).to eq(expected_error)
 end
 
