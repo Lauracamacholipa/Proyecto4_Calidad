@@ -21,15 +21,15 @@ def add_product_to_cart(product_index = 0)
 end
 
 def get_cart_badge_count
-  if has_css?('#shopping_cart_container > a > span', wait: 2)
-    find('#shopping_cart_container > a > span').text.to_i
+  if has_css?('.shopping_cart_badge', wait: 2)
+    find('.shopping_cart_badge').text.to_i
   else
     0
   end
 end
 
 # === STEPS ===
-Given('I add the first {int} products to the cart') do |count|
+Given('I add {int} products starting from the top') do |count|
   ensure_on_products_page
   
   count.times do |i|
@@ -99,10 +99,10 @@ end
 
 Then('the cart badge should show {int} items') do |expected_count|
   if expected_count > 0
-    badge = find('#shopping_cart_container > a > span', wait: 10)
+    badge = find('.shopping_cart_badge', wait: 10)
     expect(badge.text.to_i).to eq(expected_count)
   else
-    expect(page).to have_no_css('#shopping_cart_container > a > span', wait: 10)
+    expect(page).to have_no_css('.shopping_cart_badge', wait: 10)
   end
 end
 

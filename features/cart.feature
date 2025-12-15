@@ -8,7 +8,7 @@ Feature: Cart Management
 
   @smoke @cart
   Scenario Outline: Add and remove specific products from cart
-    Given I add the first <initial_count> products to the cart
+    Given I add <initial_count> products starting from the top
     When I remove <to_remove> products from the cart
     Then the cart badge should show <remaining_count> items
 
