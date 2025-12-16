@@ -1,20 +1,25 @@
 require 'capybara/cucumber'
 require_relative '../../page_objects/navigation_page'
+require_relative '../../page_objects/inventory_page'
+require_relative '../../page_objects/cart_page'
 
 # Initialize page object
 def navigation_page
   @navigation_page ||= NavigationPage.new
 end
 
-# === STEPS ===
+def inventory_page
+  @inventory_page ||= InventoryPage.new
+end
+
+def cart_page
+  @cart_page ||= CartPage.new
+end
+
+# === STEPS REFACTORIZADOS PARA USAR POM ===
+
 Given('I add {string} to my shopping cart') do |product_name|
-  visit('/inventory.html')
-  expect(page).to have_css('.title', text: 'Products', wait: 10)
-  
-  product_element = find('.inventory_item_name', text: product_name, wait: 10)
-  container = product_element.ancestor('.inventory_item')
-  container.find('.btn_inventory').click
-  
+  inventory_page.add_product_by_name(product_name)
   expect(navigation_page.cart_has_items?).to be true
 end
 
@@ -46,25 +51,26 @@ end
 
 Given('I go to the cart page') do
   navigation_page.go_to_cart
-  expect(page).to have_css('.title', text: 'Your Cart', wait: 10)
+  expect(cart_page.on_cart_page?).to be true
 end
 
 When('I click the {string} button in cart page') do |button_text|
-  navigation_page.go_to_cart unless page.current_url.include?('/cart.html')
-  find('button', text: button_text, wait: 10).click
+  cart_page.ensure_on_cart_page
+  cart_page.click_button(button_text)
 end
 
 Then('I should be on products page') do
-  expect(navigation_page.on_products_page?).to be true
+  expect(inventory_page.on_products_page?).to be true
 end
 
 When('I return to products page using inventory link') do
-  if page.current_url.include?('/cart.html')
-    find('#continue-shopping', wait: 10).click
+  if cart_page.on_cart_page?
+    cart_page.continue_shopping
   else
-    visit('/inventory.html')
+    inventory_page.ensure_on_products_page
   end
-  expect(navigation_page.on_products_page?).to be true
+  page.refresh
+  expect(inventory_page.on_products_page?).to be true
 end
 
 When('I use browser back button') do
@@ -73,7 +79,7 @@ When('I use browser back button') do
 end
 
 Then('the URL should contain {string}') do |expected_url_part|
-  expect(navigation_page.url_includes?(expected_url_part)).to be true
+  expect(page.current_url).to include(expected_url_part)
 end
 
 Then('the cart should be empty') do
@@ -81,8 +87,5 @@ Then('the cart should be empty') do
 end
 
 Then('{string} should show {string} button') do |product_name, button_text|
-  product_element = find('.inventory_item_name', text: product_name, wait: 10)
-  container = product_element.ancestor('.inventory_item')
-  button = container.find('button', wait: 10)
-  expect(button.text).to eq(button_text)
+  expect(inventory_page.product_button_text(product_name)).to eq(button_text)
 end

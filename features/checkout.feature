@@ -10,7 +10,7 @@ Feature: Checkout Process
   Scenario Outline: Complete checkout with different information
     Given I have "Sauce Labs Backpack" and "Sauce Labs Bike Light" in the cart
     When I proceed to checkout from cart
-    And I fill checkout information with first name "<first>", last name "<last>" and zip code "<zip>"
+    And I fill checkout information with first name "<First Name>", last name "<Last Name>" and postal code "<Postal Code>"
     And I continue to checkout overview
     Then I should see item total of $39.98
     And I should see tax of $3.20
@@ -19,23 +19,23 @@ Feature: Checkout Process
     Then I should see "Thank you for your order!"
 
     Examples:
-      | first  | last     | zip   |
-      | Juan   | Perez    | 12345 |
-      | Maria  | Gonzalez | 54321 |
+      | First Name | Last Name | Postal Code |
+      | Juan       | Perez     | 12345       |
+      | Maria      | Gonzalez  | 54321       |
 
   @negative @checkout
   Scenario Outline: Checkout validation errors for missing fields
     Given I have "Sauce Labs Backpack" in the cart
     When I proceed to checkout from cart
-    And I fill checkout information with first name "<first>", last name "<last>" and zip code "<zip>"
+    And I fill checkout information with first name "<First Name>", last name "<Last Name>" and postal code "<Postal Code>"
     And I click "Continue"
     Then I should see checkout error "<error_message>"
 
     Examples:
-      | first | last  | zip   | error_message                     |
-      |       | Perez | 12345 | Error: First Name is required     |
-      | Juan  |       | 12345 | Error: Last Name is required      |
-      | Juan  | Perez |       | Error: Postal Code is required    |
+      | First Name | Last Name | Postal Code | error_message                     |
+      |            | Perez     | 12345       | Error: First Name is required     |
+      | Juan       |           | 12345       | Error: Last Name is required      |
+      | Juan       | Perez     |             | Error: Postal Code is required    |
 
   @checkout @cancel
   Scenario: Cancel checkout process from information page
