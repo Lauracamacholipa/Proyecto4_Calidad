@@ -1,7 +1,7 @@
 require_relative 'base_page'
 
 class InventoryPage < BasePage
-  # Selectors
+  # Selectors - CORREGIDOS
   PRODUCTS_TITLE = '.title'
   PRODUCT_CONTAINER = '.inventory_item'
   PRODUCT_NAME = '.inventory_item_name'
@@ -9,7 +9,7 @@ class InventoryPage < BasePage
   PRODUCT_PRICE = '.inventory_item_price'
   ADD_TO_CART_BUTTON = '.btn_inventory'
   REMOVE_BUTTON = '.btn_inventory.btn_secondary'
-  SORT_DROPDOWN = '[data-test="product_sort_container"]'
+  SORT_DROPDOWN = '.product_sort_container'  
   INVENTORY_LIST = '.inventory_list'
   
   # Mapeo de valores del dropdown
@@ -43,8 +43,16 @@ class InventoryPage < BasePage
       price_element.text.gsub('$', '').to_f
     end
   end
+
+  def find_product_by(&condition)
+    all_products = find_all_elements(PRODUCT_CONTAINER)
+    all_products.find do |product_element|
+      name = product_element.find(PRODUCT_NAME).text
+      condition.call(name)
+    end
+  end
   
-  # === MÉTODOS PRINCIPALES ===
+  # === MÉTODOS PRINCIPALES - CORREGIDOS ===
   
   def on_products_page?
     url_includes?('/inventory.html') &&
@@ -77,11 +85,14 @@ class InventoryPage < BasePage
   
   def sort_products(sort_option)
     ensure_on_products_page
-    select(sort_option, from: 'product_sort_container')
-    sleep 1 # Esperar reordenamiento
+    dropdown = find_element(SORT_DROPDOWN)
+    dropdown.select(sort_option)
+    
+    sleep 1 
   end
   
   def get_selected_sort_option
+    ensure_on_products_page
     dropdown = find_element(SORT_DROPDOWN)
     selected_value = dropdown.value
     DROPDOWN_MAPPING[selected_value] || selected_value
@@ -122,5 +133,19 @@ class InventoryPage < BasePage
   def click_product_name(product_name)
     ensure_on_products_page
     find_element(PRODUCT_NAME, text: product_name).click
+  end
+
+  # Método para verificar el texto del botón de un producto
+  def product_button_text(product_name)
+    ensure_on_products_page
+    product_element = find_element(PRODUCT_NAME, text: product_name)
+    container = product_element.ancestor(PRODUCT_CONTAINER)
+    container.find('button', wait: 5).text
+  end
+  
+  # MÉTODO ADICIONAL: Para verificar dropdown visible
+  def sort_dropdown_visible?
+    ensure_on_products_page
+    element_present?(SORT_DROPDOWN)
   end
 end

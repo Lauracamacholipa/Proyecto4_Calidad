@@ -156,7 +156,11 @@ class CheckoutPage < BasePage
   # Errors
   # =========================
   def error_message
-    get_text(ERROR_MESSAGE) if element_present?(ERROR_MESSAGE)
+    if element_present?(ERROR_MESSAGE, wait: 2)
+      get_text(ERROR_MESSAGE)
+    else
+      nil
+    end
   end
 
   def error_displayed?
