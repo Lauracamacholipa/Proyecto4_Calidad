@@ -12,8 +12,16 @@ Then('I should see the products page') do
   expect(page).to have_css('.inventory_list', wait: 5)
 end
 
-Then('I should see exactly {int} products displayed') do |product_count|
+Then('I should see exactly {int} products displayed including {string}, {string}, {string}') do |product_count, product1, product2, product3|
+  # Primero verificar cantidad
   expect(inventory_page.get_product_count).to eq(product_count)
+  
+  # Luego verificar que los productos específicos están incluidos
+  product_names = inventory_page.get_product_names
+  
+  [product1, product2, product3].each do |product|
+    expect(product_names).to include(product)
+  end
 end
 
 Then('I should see the {string} header') do |header_text|

@@ -7,12 +7,11 @@ Feature: Productos y filtros
   Scenario Outline: View products with different user types
     Given I am logged in as "<username>"
     Then I should see the products page
-    And I should see exactly 6 products displayed
+    And I should see exactly 6 products displayed including "Sauce Labs Backpack", "Sauce Labs Bike Light", "Sauce Labs Bolt T-Shirt"
     And I should see the "Products" header
     And I should see the shopping cart icon
     And I should see the sort dropdown with "Name (A to Z)" selected
     And each product should have name and "Add to cart" button
-    And I should see products including "Sauce Labs Backpack", "Sauce Labs Bike Light", "Sauce Labs Bolt T-Shirt"
 
     Examples:
       | username      |
